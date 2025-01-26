@@ -1,30 +1,32 @@
-import { openai } from "@ai-sdk/openai"
-import { streamText } from "ai"
+import { NextRequest, NextResponse } from 'next/server';
+import { VertexAI } from '@google-cloud/vertexai';
 
-export const maxDuration = 300 // 5 minutes
+const PROJECT_ID = 'mythic-lead-448919-s4';
+const LOCATION = 'northamerica-northeast1'; 
+const MODEL_NAME = 'gemini-1.5-flash-001';
 
-export async function POST(req: Request) {
-  const { messages } = await req.json()
+export async function POST(req: NextRequest) {
+  try {
 
-  const result = streamText({
-    model: openai("gpt-4-turbo"),
-    messages: [
-      {
-        role: "system",
-        content: `You are a helpful medical chatbot assisting patients in a virtual waiting room. Your task is to:
-1. Analyze the patient's symptoms
-2. Determine if the issue is obvious (e.g., "broken leg") or not
-3. Provide appropriate next steps, potential questions the doctor might ask, and how to answer them
-4. Offer options based on the severity of the issue:
-   - For obvious issues: More information, meditation, talk, or distractions
-   - For non-obvious issues: Breathing exercises, distractions, or information on possible causes
-5. Respond to the patient's choice with relevant information or guidance
-Always maintain a compassionate and professional tone. Do not provide definitive medical diagnoses or treatment advice.`,
-      },
-      ...messages,
-    ],
-  })
+    const body = await req.json();
+    const { prompt } = body;
 
-  return result.toDataStreamResponse()
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required in the request body.' }, { status: 400 });
+    }
+
+    const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
+
+    const generativeModel = vertexAI.getGenerativeModel({
+      model: MODEL_NAME,
+    });
+
+    const resp = await generativeModel.generateContent(prompt);
+    const contentResponse = await resp.response;
+
+    return NextResponse.json({ result: contentResponse }, { status: 200 });
+  } catch (error) {
+    console.error('Error generating content:', error);
+    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+  }
 }
-
