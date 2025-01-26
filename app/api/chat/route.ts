@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
     const contentResponse = await resp.response;
 
     return NextResponse.json({ result: contentResponse }, { status: 200 });
+
+    
   } catch (error) {
     console.error('Error generating content:', error);
     return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });

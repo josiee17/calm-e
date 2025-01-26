@@ -1,25 +1,70 @@
-import type { FormEvent } from "react"
-import type { Message } from "ai"
+import React, { useState, FormEvent } from "react";
 
-interface ChatInterfaceProps {
-  messages: Message[]
-  input: string
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleSubmit: (e: FormEvent<HTMLFormElement>) => void
-  showOptions: boolean
-  isObviousIssue: boolean
-  handleOptionSelect: (option: string) => void
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
 }
 
-export default function ChatInterface({
-  messages,
-  input,
-  handleInputChange,
-  handleSubmit,
-  showOptions,
-  isObviousIssue,
-  handleOptionSelect,
-}: ChatInterfaceProps) {
+export default function ChatInterface() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  
+    if (!input.trim()) return;
+  
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: input,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+  
+    setInput("");
+  
+    setLoading(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: input }),
+      });
+  
+      const data = await response.json();
+  
+      const text = data.result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+  
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: text,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Error calling API:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content: "Error: Unable to connect to the server.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
   return (
     <div className="border rounded-lg p-4 max-w-2xl mx-auto">
       <div className="h-96 overflow-y-auto mb-4">
@@ -34,6 +79,11 @@ export default function ChatInterface({
             </span>
           </div>
         ))}
+        {loading && (
+          <div className="text-left">
+            <span className="inline-block p-2 rounded-lg bg-gray-200 text-black">Thinking...</span>
+          </div>
+        )}
       </div>
       <form onSubmit={handleSubmit} className="flex">
         <input
@@ -43,66 +93,10 @@ export default function ChatInterface({
           className="flex-grow border rounded-l-lg p-2"
           placeholder="Enter your symptoms or choose an option..."
         />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-r-lg">
-          Send
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-r-lg" disabled={loading}>
+          {loading ? "Sending..." : "Send"}
         </button>
       </form>
-      {showOptions && (
-        <div className="mt-4">
-          <h2 className="font-bold mb-2">
-            {isObviousIssue ? "How would you like to proceed?" : "What would you like to do?"}
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {isObviousIssue ? (
-              <>
-                <button
-                  onClick={() => handleOptionSelect("More Information")}
-                  className="bg-green-500 text-white p-2 rounded"
-                >
-                  More Information
-                </button>
-                <button
-                  onClick={() => handleOptionSelect("Meditation")}
-                  className="bg-purple-500 text-white p-2 rounded"
-                >
-                  Meditation
-                </button>
-                <button onClick={() => handleOptionSelect("Talk")} className="bg-yellow-500 text-white p-2 rounded">
-                  Talk
-                </button>
-                <button
-                  onClick={() => handleOptionSelect("Distractions")}
-                  className="bg-red-500 text-white p-2 rounded"
-                >
-                  Distractions
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleOptionSelect("Breathing Exercises")}
-                  className="bg-green-500 text-white p-2 rounded"
-                >
-                  Breathing Exercises
-                </button>
-                <button
-                  onClick={() => handleOptionSelect("Distractions")}
-                  className="bg-yellow-500 text-white p-2 rounded"
-                >
-                  Distractions
-                </button>
-                <button
-                  onClick={() => handleOptionSelect("Information")}
-                  className="bg-blue-500 text-white p-2 rounded"
-                >
-                  Information
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
-  )
+  );
 }
-
