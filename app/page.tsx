@@ -1,38 +1,48 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useChat } from "ai/react"
-import Header from "./components/Header"
-import ChatInterface from "./components/ChatInterface"
+import { useRouter } from "next/navigation";
 
-export default function Home() {
-  const [showOptions, setShowOptions] = useState(false)
-  const [isObviousIssue, setIsObviousIssue] = useState(false)
+export default function StartPage() {
+  const router = useRouter();
 
-  const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
-    api: "/api/chat",
-  })
+  const handleGetStarted = () => {
+    router.push("/chat");
+  };
 
-  const handleOptionSelect = (option: string) => {
-    setMessages([...messages, { id: Date.now().toString(), role: "user", content: `I choose option: ${option}` }])
-  }
+  const handleAbout = () => {
+    router.push("/about");
+  };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">Welcome to the Virtual Waiting Room Assistant</h1>
-        <ChatInterface
-          messages={messages}
-          input={input}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          showOptions={showOptions}
-          isObviousIssue={isObviousIssue}
-          handleOptionSelect={handleOptionSelect}
-        />
-      </main>
-    </div>
-  )
-}
+    <div
+      className="relative h-screen w-screen"
+      style={{
+        backgroundImage: 'url("/images/start-background.png")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div
+        className="absolute top-[24%] right-[12%] flex flex-col items-end items-center justify-center h-screen p-8 gap-4"
+        style={{ height: "auto" }} 
+      >
+        <h1 className="text-4xl font-bold mb-4 text-blue-900 p-4 rounded-lg" style={{ marginBottom: "80px" }}>CALM-E</h1>
+        <span
+          onClick={handleGetStarted}
+          className="text-white text-xl bg-blue-600 px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 cursor-pointer"
+          style={{ marginBottom: "100px" }}
+        >
+          Get Started
+        </span>
+        <span
+          onClick={handleAbout}
+          className="text-white text-xl bg-gray-600 px-6 py-3 rounded-lg shadow-lg hover:bg-gray-700 cursor-pointer"
+        >
+          About
+        </span>
+      </div>
 
+      
+    </div>
+  );
+}
