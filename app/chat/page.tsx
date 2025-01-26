@@ -13,7 +13,7 @@ export default function ChatPage() {
   const handleOptionSelect = (option: string) => {
     setMessages([
       ...messages,
-      { id: Date.now().toString(), role: "user", content: `I choose option: ${option}` }, // 使用反引号
+      { id: Date.now().toString(), role: "user", content: `I choose option: ${option}` }, 
     ]);
   };
   
@@ -27,11 +27,10 @@ export default function ChatPage() {
         backgroundPosition: "center",
       }}
     >
-      {/* 返回按钮 */}
       <div className="absolute top-10 left-20" style={{ height: "auto" }} >
         <span
           onClick={() => router.push("/")}
-          className="text-white text-lg cursor-pointer hover:underline"
+          className="text-white text-xl  px-4 py-2 bg-blue-400 rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
         >
           Back
         </span>
@@ -44,7 +43,10 @@ export default function ChatPage() {
       </h1>
       <div
         className="bg-blue-100/70 p-6 rounded-lg shadow-lg max-w-3xl mx-auto"
-        style={{ backgroundColor: "rgba(173, 216, 230, 0.7)" }}
+        style={{
+          backgroundColor: "rgba(173, 216, 230, 0.7)",
+          minHeight: "500px", 
+        }}
       >
         <ChatInterface
           messages={messages}

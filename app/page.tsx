@@ -23,20 +23,20 @@ export default function StartPage() {
       }}
     >
       <div
-        className="absolute top-[24%] right-[12%] flex flex-col items-end items-center justify-center h-screen p-8 gap-4"
+        className="absolute top-[22%] right-[10%] flex flex-col items-end items-center justify-center h-screen p-8 gap-4"
         style={{ height: "auto" }} 
       >
-        <h1 className="text-4xl font-bold mb-4 text-blue-900 p-4 rounded-lg" style={{ marginBottom: "80px" }}>CALM-E</h1>
+        <h1 className="text-6xl font-bold mb-4 text-blue-800 p-4 rounded-lg" style={{ marginBottom: "80px" }}>CALM-E</h1>
         <span
           onClick={handleGetStarted}
-          className="text-white text-xl bg-blue-600 px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 cursor-pointer"
+          className="text-white text-3xl bg-blue-500 px-6 py-3 rounded-lg shadow-lg hover:bg-blue-600 cursor-pointer"
           style={{ marginBottom: "100px" }}
         >
           Get Started
         </span>
         <span
           onClick={handleAbout}
-          className="text-white text-xl bg-gray-600 px-6 py-3 rounded-lg shadow-lg hover:bg-gray-700 cursor-pointer"
+          className="text-white text-3xl bg-gray-500 px-6 py-3 rounded-lg shadow-lg hover:bg-gray-600 cursor-pointer"
         >
           About
         </span>
