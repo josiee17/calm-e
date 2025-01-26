@@ -1,83 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TextModel } from '@google-cloud/vertexai';
+import { VertexAI } from '@google-cloud/vertexai';
 
-// Constants for Vertex AI configuration
-const PROJECT_ID = 'tensile-topic-448919-d9';
+const PROJECT_ID = 'mythic-lead-448919-s4';
+
 const LOCATION = 'northamerica-northeast1';
-const MODEL_NAME = 'text-bison-001'; // Update if needed
-
-// Initialize the TextModel
-const textModel = new TextModel({
-  projectId: PROJECT_ID,
-  location: LOCATION,
-});
-
-let patientHasProvidedSymptoms = false; // Track if symptoms are already provided
+const MODEL_NAME = 'gemini-1.5-flash-001';
 
 export async function POST(req: NextRequest) {
   try {
+    // Parse the request body
     const body = await req.json();
     const { prompt, userStep } = body;
 
-    if (!userStep) {
-      return NextResponse.json({ error: 'User step is required in the request body.' }, { status: 400 });
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required in the request body.' }, { status: 400 });
     }
 
-    let fullPrompt = '';
+    // Define the base system prompt
+    const systemPrompt = `
+      You are a medical chat bot assisting patients already in a waiting room.
+      Short responses and wait for user responses before continuing (with no bold font).
+      Here’s the structure:
+      0. Input Process: Ask patients to input their symptoms clearly and consisely.
+      1. Provide concise information on the next steps based on symptoms.
+      2. Detail questions the doctor might ask and how patients should respond.
+      3. Ask the patient which type of assistance they would like:
+         - Clarification on the problem
+         - Meditation or breathing exercises
+         - A listening ear or casual conversation
+         - Distractions like stories or games
+      4. According to their answer, provide them with what they need.
+      Focus on being professional, empathetic, and concise. Do not provide medical diagnoses or treatments.
+    `;
 
-    // Handle different conversation steps
-    if (userStep === 'greeting') {
-      // First step: Greet the patient and ask about symptoms
-      patientHasProvidedSymptoms = false; // Reset if starting a new conversation
-      fullPrompt = `
-        You are a medical chatbot assisting patients in a waiting room.
-        Start the conversation by greeting the patient professionally and empathetically.
-        Then ask them what symptoms they are experiencing today.
+    // Combine the system prompt with the user's input and step
+    let fullPrompt = systemPrompt;
+    let nextStep = 'initial'; // Initialize the next step with the current step
+
+    if (nextStep === 'initial') {
+      fullPrompt += `
+        Patient's Symptoms: ${prompt}
+        Begin by explaining what the patient can expect and what questions the doctor might ask.
       `;
-    } else if (userStep === 'initial' && !patientHasProvidedSymptoms) {
-      // Step for receiving symptoms
-      fullPrompt = `
-        You have received the following symptoms from the patient: ${prompt}.
-        Thank them for sharing and provide concise information about what they can expect next.
-        Inform them about potential questions the doctor might ask.
-      `;
-      patientHasProvidedSymptoms = true; // Mark that symptoms have been provided
-    } else if (userStep === 'support_options') {
-      // Provide support options without asking for symptoms again
-      fullPrompt = `
-        Ask the patient which type of assistance they would like:
-        1. Clarification or coping tips
+        nextStep = 'support_options'
+
+    } if (nextStep === 'support_options') {
+      fullPrompt += `
+        Ask the patient which type of assistance they would like from the following options (make sure to enumerate them):
+        1. Clarification on the problem
         2. Meditation or breathing exercises
         3. A listening ear or casual conversation
         4. Distractions based on their interests.
+        Ask them to select 1, 2, 3, 4
         Wait for their choice before proceeding.
       `;
-    } else if (userStep === 'specific_support') {
-      // Respond based on the specific support choice
-      fullPrompt = `
-        Based on the patient's choice, provide relevant support.
-        For example:
-        - Clarification or coping: Offer detailed information or videos.
-        - Meditation: Provide guided exercises.
-        - Listening ear: Engage them in a supportive conversation.
-        - Distractions: Suggest content based on their preferences.
-      `;
-    } else {
-      // Handle invalid or unrecognized steps
-      return NextResponse.json({ error: 'Invalid user step provided.' }, { status: 400 });
+
+        if(prompt === '1'){
+            nextStep = 'select1'
+            fullPrompt += `Provide more information on the user's symptom(s).`;
+        }
+
+        else if(prompt === '2'){
+            nextStep = 'select2';
+            fullPrompt = `Guide them through breathing or meditation exercices.`;
+        }
+
+        else if(prompt === '3'){
+            nextStep = 'select3';
+            fullPrompt = `Give a listening ear or have a casual conversation with them`;
+        }
+
+        else if(prompt === '4'){
+            nextStep = 'select4';
+            fullPrompt = `Do whatever distraction the user wants, whether it's games, stories, etc.`;
+        }
+
+        else{
+            fullPrompt += `Please select a valid option (1, 2, 3, or 4).`;
+        }
+
     }
 
-    // Generate content from the Vertex AI model
-    const [response] = await textModel.predict({
-      instances: [{ content: fullPrompt }],
-      parameters: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
-      },
+    // Initialize the Vertex AI client
+    const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
+
+    // Access the generative model
+    const generativeModel = vertexAI.getGenerativeModel({
+      model: MODEL_NAME,
     });
 
-    // Return the generated content
-    return NextResponse.json({ result: response.content }, { status: 200 });
+    // Generate the content based on the structured prompt
+    const resp = await generativeModel.generateContent(fullPrompt);
+    const contentResponse = await resp.response;
+
+    // Return the generated content as the API response
+    return NextResponse.json({ result: contentResponse }, { status: 200 });
 
   } catch (error) {
     console.error('Error generating content:', error);
