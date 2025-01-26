@@ -4,6 +4,7 @@ import { VertexAI } from '@google-cloud/vertexai';
 const PROJECT_ID = 'mythic-lead-448919-s4';
 const LOCATION = 'northamerica-northeast1';
 const MODEL_NAME = 'gemini-1.5-flash-001';
+let globalSymptom: string | null = null;
 
 export async function POST(req: NextRequest) {
 try {
@@ -17,26 +18,21 @@ return NextResponse.json({ error: 'Prompt is required in the request body.' }, {
 
 // Define the base system prompt
     const systemPrompt = `
-You are a medical chat bot assisting patients already in a waiting room.
-Short responses and wait for user responses before continuing (with no bold font).
-Here’s the structure:
-0. Input Process: Ask patients to input their symptoms clearly and consisely.
-1. Provide concise information on the next steps based on symptoms.
-2. Detail questions the doctor might ask and how patients should respond.
-3. Ask the patient which type of assistance they would like:
-- Potential questions that the doctor might ask and their expected response
-- Meditation or breathing exercises
-- A listening ear or casual conversation
-- Distractions like stories or games
-4. According to their answer, provide them with what they need.
-Focus on being professional, empathetic, and concise. Do not provide medical diagnoses or treatments.
-`;
+    You are a medical chat bot assisting patients already in a waiting room. 
+    Start by greating the patient and explaining what the patient can expect, what is the main cause of their symptom, and why does the symptom usually appear. 
+    Your tone should be nice, caring, friendly. Do not provide medical diagnoses or treatments.
+    Short responses with no bold font.
+    Here’s the structure:
+    Provide concise information on the next steps based on symptoms.
+    `;
+
 
 // Combine the system prompt with the user's input and step
     let fullPrompt = systemPrompt;
 let nextStep = 'initial'; // Initialize the next step with the current step
 
     if (nextStep === 'initial') {
+      globalSymptom = prompt;
 fullPrompt += `
 Patient's Symptoms: ${prompt}
 Begin by explaining what the patient can expect.
@@ -56,22 +52,23 @@ Wait for their choice before proceeding.
 
 if(prompt === '1'){
 nextStep = 'select1'
-fullPrompt = `Provide questions the doctor might ask based on the user's symptom(s) and the expected form of answers.`;
+fullPrompt = `You are a medical chat bot assisting patients already in a waiting room. Please be nice, caring, friendly, professional, empathetic, and concise. 
+Provide questions the doctor might ask based on the user's symptom ${globalSymptom} and the expected form of answers.`;
 }
 
 else if(prompt === '2'){
 nextStep = 'select2';
-fullPrompt = `Guide the user through a concise and short breathing exercise.`;
+fullPrompt = `Guide the user through a concise and short breathing exercise based on the user's symptom ${globalSymptom}.`;
 }
 
 else if(prompt === '3'){
 nextStep = 'select3';
-fullPrompt = `Give a listening ear or have a casual conversation with the user`;
+fullPrompt = `Give a listening ear or have a casual conversation with the user based on the user's symptom ${globalSymptom}`;
 }
 
 else if(prompt === '4'){
 nextStep = 'select4';
-fullPrompt = `Do whatever distraction the user wants, whether it's games, stories, etc.`;
+fullPrompt = `Do whatever distraction the user wants, whether it's games, stories, etc based on the user's symptom ${globalSymptom}.`;
 }
 
 else{
